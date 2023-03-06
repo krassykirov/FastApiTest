@@ -2,6 +2,7 @@ __pycache__/
 __pycache__
 .pytest_cache/
 .DS_Store
+DS_Store
 app.db
 .app.db
 log.txt

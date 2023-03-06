@@ -24,7 +24,7 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     username: Union[str, None] = None
-    expires: Optional[datetime.datetime] # https://stackoverflow.com/questions/68811220/handling-the-token-expiration-in-fastapi
+    expires: Optional[datetime.datetime]
 
 class UserOutput(SQLModel):
     id: int
