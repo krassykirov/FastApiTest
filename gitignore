@@ -8,6 +8,8 @@ app.db
 log.txt
 test/
 .test
-.venv
 env/
 venv/
+venv
+.venv
+
