@@ -1,8 +1,12 @@
 __pycache__/
+__pycache__
 .pytest_cache/
+.DS_Store
 app.db
+.app.db
 log.txt
 test/
+.test
 .venv
 env/
 venv/
