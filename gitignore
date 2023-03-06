@@ -1,6 +1,9 @@
 __pycache__/
 __pycache__
 .pytest_cache/
+venv/
+venv
+.venv
 .DS_Store
 DS_Store
 app.db
@@ -9,7 +12,5 @@ log.txt
 test/
 .test
 env/
-venv/
-venv
-.venv
+
 

@@ -1,11 +1,9 @@
 from typing import Optional, List
 from fastapi import Depends, HTTPException, APIRouter
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
 from sqlmodel import Session, select
 from db import get_session
 from schemas import Car, CarOutput, CarInput, Trip, TripInput, UserOutput, User
-from fastapi import APIRouter, Request, Form,Depends, Cookie
+from fastapi import APIRouter, Request, Form, Depends
 from fastapi.templating import Jinja2Templates
 from helper import wrap
 from oauth import get_current_user

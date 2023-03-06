@@ -1,28 +1,27 @@
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, OAuth2
-from fastapi import APIRouter, Request, Form, Depends, Cookie, Header
-from typing import Optional, List, Union, Any
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Request, Depends
+from typing import Union
 from sqlmodel import Session, select
 from starlette import status
 from fastapi import Depends, HTTPException, APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from db import get_session
-from schemas import User, UserOutput, Token,TokenData
+from schemas import User, Token,TokenData
 from jose import JWTError, jwt, ExpiredSignatureError
 from fastapi import BackgroundTasks
 from datetime import datetime, timedelta
 from helper import write_log, wrap
 from schemas import OAuth2PasswordBearerCookie
-from fastapi.encoders import jsonable_encoder
+
 
 templates = Jinja2Templates(directory="templates")
 # basic_auth = BasicAuth(auto_error=False)
-# URL_PREFIX="/auth"
 oauth_router = APIRouter()
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="token")
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 10  # 30 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 5  # 30 minutes
 ALGORITHM = "HS256"
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
@@ -31,7 +30,7 @@ SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 def home(request: Request):
     # print("headers:", request.headers.get('cookie').split("=")[1].split()[1].replace('"',""))
     try:
-        token = request.cookies.get("access_token") or request.headers.get("access_token")
+        token = request.cookies.get("access_token") #or request.headers.get("access_token")
         if token:
             access_token = token.split()[1]
             payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -60,12 +59,12 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)) ->User:
-    print('--Entering get_current_user --- token:', token)
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    # credentials_exception = HTTPException(
+    #     status_code=status.HTTP_401_UNAUTHORIZED,
+    #     detail="Could not validate credentials",
+    #     headers={"WWW-Authenticate": "Bearer"},
+    # )
+    credentials_exception = HTTPException(status_code=302, detail="Not authorized", headers = {"Location": "/"} )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -81,7 +80,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     if expires is None:
         raise credentials_exception
-    if datetime.utcnow() > token_data.expires:
+    converted_expires = datetime.fromtimestamp(expires)
+    if datetime.utcnow() > converted_expires:
         raise credentials_exception
     return user
 
@@ -116,7 +116,7 @@ async def read_users_me(request: Request, current_user: User = Depends(get_curre
 
 @oauth_router.get("/logout")
 async def route_logout_and_remove_cookie(request: Request):
-    response = RedirectResponse(url="/")
+    response = RedirectResponse("home.html", status_code=302)
     response = templates.TemplateResponse("home.html",{"request":request, 'current_user': None})
     response.delete_cookie(key="access_token")
     return response

@@ -1,24 +1,19 @@
-<html>
-<head>
-    <title>Demo</title>
-</head>
-<body>
 
-  <form class="form-inline" action="token" method="post">
-      <label for="username"><b>Username</b></label>
-    <input type="text" placeholder="Enter Username" name="username" required>
-    <label for="password"><b>Password</b></label>
-    <input type="password" placeholder="Enter Password" name="password" required>
-      <button type="submit">Login</button>
-  </form>
-  <form class="form-inline" action="logout" method="get">
-    <button type="submit">Logout</button>
- </form>
+{% extends "base.html" %}
+
+{% block html_read %}
+<form class="form-inline" action="token" method="post">
+  <label for="username"><b>Username</b></label>
+<input type="text" placeholder="Enter Username" name="username" required>
+<label for="password"><b>Password</b></label>
+<input type="password" placeholder="Enter Password" name="password" required>
+<button type="submit" class="btn btn-info">Login</button>
+</form>
 
 {% if current_user %}
 <p>Logged in User: {{ current_user }}  </p>
 {% else %}
-<p>Anonymous User </p>
+<p>Anonymous User, Please login</p>
 {% endif %}
 
 {% if access_token %}
@@ -29,7 +24,4 @@
 <p>expires: {{ expires }}  </p>
 {% endif %}
 
-
-</body>
-
-</html>
+{% endblock %}

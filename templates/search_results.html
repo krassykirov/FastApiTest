@@ -1,17 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Carsharing: Search Results</title>
-</head>
-<body>
-<h1>Welcome to the Car Sharing service</h1>
+{% extends "base.html" %}
+
+{% block html_read %}
 <p>Search for the car you need:
 <form action="search" method="post">
     <table>
         <tr>
             <td><label for="doors">Number of doors:</label></td>
-            <td><input type="number" name="doors"></td>
+            <td><input type="number" min="2" max="8" name="doors"></td>
         </tr>
         <tr>
             <td><label for="name">Name of the car:</label></td>
@@ -27,7 +22,7 @@
             </td>
         </tr>
     </table>
-    <button type="submit">Search</button>
+    <button type="submit" class="btn btn-info">Search</button>
 </form>
 
 
@@ -45,5 +40,5 @@
     </li>
     {% endif  %}
 </ul>
-</body>
-</html>
+
+{% endblock %}
