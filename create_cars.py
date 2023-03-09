@@ -1,14 +1,14 @@
 """
-create_user.py
+create_carsr.py
 -------------
-A convenience script to create a user.
+A convenience script to create cars.
 """
 
 from getpass import getpass
 
 from sqlmodel import SQLModel, Session, create_engine
 
-from schemas import CarInput, Car
+from schemas import Car
 import json
 
 

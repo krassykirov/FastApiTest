@@ -18,10 +18,9 @@ from schemas import OAuth2PasswordBearerCookie
 templates = Jinja2Templates(directory="templates")
 # basic_auth = BasicAuth(auto_error=False)
 oauth_router = APIRouter()
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="token")
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 15  # 30 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 10  # 30 minutes
 ALGORITHM = "HS256"
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
@@ -37,14 +36,17 @@ def home(request: Request):
             username = payload.get("sub")
             expires = payload.get("exp")
             converted_expires = datetime.fromtimestamp(expires)
-            context = {'request': request, 'current_user': username, 'access_token': access_token, 'expires': converted_expires}
-            return templates.TemplateResponse("home.html", context)
+            print('converted_expires', converted_expires)
+            print('datetime.now()', datetime.now())
+            if datetime.now() < converted_expires:
+                context = {'request': request, 'current_user': username, 'access_token': access_token, 'expires': converted_expires}
+                return templates.TemplateResponse("home.html", context)
         else:
-            context = {'request': request}
-            return templates.TemplateResponse("home.html", context)
-    except ExpiredSignatureError: # <---- this one
-        context = {'request': request, 'current_user': "Anonymous", 'access_token': "expired token", 'expires': "token has been expired"}
-        return templates.TemplateResponse("home.html", context)
+            context = {'request': request, 'expires': "token has been expired please login"}
+            return templates.TemplateResponse("login.html", context)
+    except ExpiredSignatureError:
+        context = {'request': request, 'expires': "token has been expired please login"}
+        return templates.TemplateResponse("login.html", context)
     except Exception:
         raise
 
@@ -64,7 +66,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     #     detail="Could not validate credentials",
     #     headers={"WWW-Authenticate": "Bearer"},
     # )
-    credentials_exception = HTTPException(status_code=302, detail="Not authorized", headers = {"Location": "/"} )
+    credentials_exception = HTTPException(status_code=302, detail="Not authorized", headers = {"Location": "/login"} )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -86,7 +88,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 @oauth_router.post('/token', response_model=Token)
-async def login_access_token(*, response: Response, form_data: OAuth2PasswordRequestForm=Depends(),
+def login_access_token(*, response: Response, form_data: OAuth2PasswordRequestForm=Depends(),
                 db: Session = Depends(get_session), background_tasks: BackgroundTasks ):
     query = select(User).where(User.username == form_data.username)
     user = db.exec(query).first()
@@ -108,15 +110,38 @@ async def login_access_token(*, response: Response, form_data: OAuth2PasswordReq
         )
 
 @oauth_router.get('/me')
-async def read_users_me(request: Request, current_user: User = Depends(get_current_user)):
-    print('request_headesr', request.headers)
+def read_users_me(request: Request, current_user: User = Depends(get_current_user)):
     header_token = request.headers.get('access_token')
     cookie_token= request.cookies.get('access_token')
     return header_token, cookie_token, current_user
 
+@oauth_router.get("/login")
+def login(request: Request):
+    response = templates.TemplateResponse("login.html",{"request":request})
+    return response
+
+
 @oauth_router.get("/logout")
-async def route_logout_and_remove_cookie(request: Request):
-    response = RedirectResponse("home.html", status_code=302)
-    response = templates.TemplateResponse("home.html",{"request":request, 'current_user': None})
+def route_logout_and_remove_cookie(request: Request):
+    response = RedirectResponse("login.html", status_code=302)
+    response = templates.TemplateResponse("login.html",{"request":request, 'current_user': None})
     response.delete_cookie(key="access_token")
     return response
+
+
+def get_username_from_token(request: Request):
+    try:
+        token = request.cookies.get("access_token") #or request.headers.get("access_token")
+        if token:
+            access_token = token.split()[1]
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+            username = payload.get("sub")
+            return username
+        else:
+            context = {'request': request}
+            return templates.TemplateResponse("login.html", context)
+    except ExpiredSignatureError:
+        context = {'request': request, 'current_user': "Anonymous", 'access_token': "expired token", 'expires': "token has been expired"}
+        return templates.TemplateResponse("home.html", context)
+    except Exception:
+        raise

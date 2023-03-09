@@ -17,7 +17,6 @@ engine = create_engine(
     echo=True # Log generated SQL
 )
 
-
 if __name__ == "__main__":
     print("Creating tables (if necessary)")
     SQLModel.metadata.create_all(engine)

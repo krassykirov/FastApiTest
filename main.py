@@ -3,7 +3,9 @@ from fastapi import FastAPI, Request, Response
 from sqlmodel import SQLModel, create_engine, Session
 from cars import router
 from oauth import oauth_router
-# from db import get_session
+from fastapi.staticfiles import StaticFiles
+from fastapi import Depends
+from oauth import get_current_user
 # from fastapi.middleware.cors import CORSMiddleware
 
 engine = create_engine(
@@ -13,6 +15,8 @@ engine = create_engine(
 app = FastAPI()
 app.include_router(router)
 app.include_router(oauth_router)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.dependencies=[Depends(get_current_user)]
 
 # origins = [
 #     "http://localhost:8000",

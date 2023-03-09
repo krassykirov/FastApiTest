@@ -17,3 +17,5 @@ def write_log(message=""):
 # async def log(message: str, background_tasks: BackgroundTasks):
 #     background_tasks.add_task(write_log, message="some notification")
 #     return {"message": "Notification sent in the background"}
+
+
