@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block html_read %}
+{% if not current_user %}
+<p style="margin: 20px">Anonymous User, Please login</p>
+<!-- <form class="form-inline" action="token" method="post" style="margin: 20px;">
+  <label for="username"><b>Username</b></label>
+<input type="text" placeholder="Enter Username" name="username" required>
+<label for="password"><b>Password</b></label>
+<input type="password" placeholder="Enter Password" name="password" required>
+<button type="submit" class="btn btn-info">Login</button>
+</form> -->
+
+<form action="token" method="post" style="margin: 20px; width: 320px;">
+    <div class="form-group">
+      <label for="username">Username</label>
+      <input type="text" class="form-control" name="username" placeholder="Enter Username">
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" class="form-control" name="password" placeholder="Password">
+    </div>
+    <button type="submit" class="btn btn-primary">Login</button>
+  </form>
+
+{% else %}
+<p style="margin: 20px;">Logged in as user: <b> {{ current_user }} </b> </p>
+{% endif %}
+{% endblock %}
