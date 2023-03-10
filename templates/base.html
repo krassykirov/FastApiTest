@@ -20,7 +20,7 @@
           <a class="nav-link" href="{{ url_for('home')}}">Home <span class="sr-only">(current)</span></a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('get_cars')}}">Search</a>
+          <a class="nav-link" href="{{ url_for('get_user_cars')}}">Search</a>
         </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -28,7 +28,7 @@
           </a>
           <div class="dropdown-menu" aria-labelledby="navbarDropdown">
             <a class="dropdown-item" href="{{ url_for('add_car_ui')}}">Add Car</a>
-            <a class="dropdown-item" href="{{ url_for('get_user_cars')}}">My Cars</a>
+            <!-- <a class="dropdown-item" href="{{ url_for('get_user_cars')}}">My Cars</a> -->
             <div class="dropdown-divider"></div>
             <a class="dropdown-item" href="#">Something else here</a>
           </div>

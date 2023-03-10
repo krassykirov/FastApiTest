@@ -2,15 +2,6 @@
 {% extends "base.html" %}
 
 {% block html_read %}
-<!-- {% if not current_user %}
-<form class="form-inline" action="token" method="post" style="margin: 20px;">
-  <label for="username"><b>Username</b></label>
-<input type="text" placeholder="Enter Username" name="username" required>
-<label for="password"><b>Password</b></label>
-<input type="password" placeholder="Enter Password" name="password" required>
-<button type="submit" class="btn btn-info">Login</button>
-</form>
-{% endif %} -->
 
 {% if current_user %}
 <p style="margin: 20px;">Logged in User: {{ current_user }}  </p>

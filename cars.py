@@ -15,18 +15,15 @@ router = APIRouter(prefix="/api")
 
 @router.get("/")
 def get_cars(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse("search_results.html", {"request":request})
+    return templates.TemplateResponse("search_results.html", {"request":request, 'current_user': user.username})
 
 @router.get("/cars")
 def get_user_cars(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
-    username = user.username
-    cars = user.cars
-    return templates.TemplateResponse("user_items.html", {"request":request,'cars': cars,'username': username})
+    return templates.TemplateResponse("user_items.html", {"request":request,'cars': user.cars,'current_user': user.username})
 
 @router.get("/add_car_ui")
 def add_car_ui(request: Request, user: User = Depends(get_current_user)):
-    username = get_username_from_token(request)
-    return templates.TemplateResponse("add_car_ui.html", {"request":request, 'username': username})
+    return templates.TemplateResponse("add_car_ui.html", {"request":request, 'current_user': user.username})
 
 @router.post("/add_car_ui")
 async def add_car_ui(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
@@ -39,13 +36,14 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
         if not os.path.exists(dir):
                os.makedirs(dir,exist_ok=True)
         full_name = os.path.join(dir,file.filename)
+        print('full_name:', full_name)
         with open(full_name, 'wb') as f:
             f.write(content)
         car = Car(name=form_data['name'], doors=form_data['doors'], size=form_data['size'], photo=file.filename, username=username)
         db.add(car)
         db.commit()
         response = RedirectResponse("add_car_ui.html", status_code=302)
-        response = templates.TemplateResponse("add_car_ui.html",{"request":request, 'car': car})
+        response = templates.TemplateResponse("add_car_ui.html",{"request":request, 'car': car, 'current_user': user.username})
         return response
     except Exception as e:
         print(e)
@@ -71,13 +69,17 @@ def add_car(car: Car, db: Session=Depends(get_session),user: User = Depends(get_
         db.refresh(new_car)
         return new_car
 
-@router.delete("/{id}", status_code=204)
-def delete_car(id:int, db: Session=Depends(get_session), user: User = Depends(get_current_user)) -> None:
+@router.post("/delete_car", status_code=204)
+def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_session), user: User = Depends(get_current_user)) -> None:
+    # print('request.form', request.form())
     query = db.query(Car).where(Car.id == id)
     car = query.first()
     if car:
         db.delete(car)
         db.commit()
+        response = RedirectResponse("user_items.html", status_code=303)
+        response = templates.TemplateResponse("user_items.html", {"request":request,'cars': user.cars,'current_user': user.username})
+        return response
     else:
         raise HTTPException(status_code=404,detail=f"No car with id={id}")
 
