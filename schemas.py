@@ -23,7 +23,7 @@ class TokenData(BaseModel):
 
 class Car(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
+    name: str = Field(sa_column=Column("name", VARCHAR, unique=True, index=True))
     size: Optional[str]  = None
     fuel: Optional[str]  = None
     doors: Optional[int] = None
@@ -34,7 +34,7 @@ class Car(SQLModel, table=True):
 
 class User(SQLModel, table=True):
     id: int = Field(primary_key=True,default=None)
-    username: str = Field(sa_column=Column("username", VARCHAR,unique=True, index=True))
+    username: str = Field(sa_column=Column("username", VARCHAR, unique=True, index=True))
     password_hash: str = ""
     cars: List[Car] = Relationship(sa_relationship_kwargs={"cascade": "delete"}, back_populates="owner")
 

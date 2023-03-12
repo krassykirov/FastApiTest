@@ -30,6 +30,6 @@ if __name__ == "__main__":
     for car in data:
         print('car', car)
         with Session(engine) as session:
-            car = Car(name=car['name'],size=car['size'], fuel=car['fuel'], doors=car['doors'])
+            car = Car(name=car['name'],size=car['size'], fuel=car['fuel'], doors=car['doors'], username='kr')
             session.add(car)
             session.commit()

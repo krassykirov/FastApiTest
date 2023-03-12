@@ -20,7 +20,7 @@ templates = Jinja2Templates(directory="templates")
 oauth_router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="token")
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30  # 30 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 90  # 30 minutes
 ALGORITHM = "HS256"
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
@@ -129,19 +129,19 @@ def route_logout_and_remove_cookie(request: Request):
     return response
 
 
-def get_username_from_token(request: Request):
-    try:
-        token = request.cookies.get("access_token") #or request.headers.get("access_token")
-        if token:
-            access_token = token.split()[1]
-            payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-            username = payload.get("sub")
-            return username
-        else:
-            context = {'request': request}
-            return templates.TemplateResponse("login.html", context)
-    except ExpiredSignatureError:
-        context = {'request': request, 'current_user': "Anonymous", 'access_token': "expired token", 'expires': "token has been expired"}
-        return templates.TemplateResponse("home.html", context)
-    except Exception:
-        raise
+# def get_username_from_token(request: Request):
+#     try:
+#         token = request.cookies.get("access_token") #or request.headers.get("access_token")
+#         if token:
+#             access_token = token.split()[1]
+#             payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+#             username = payload.get("sub")
+#             return username
+#         else:
+#             context = {'request': request}
+#             return templates.TemplateResponse("login.html", context)
+#     except ExpiredSignatureError:
+#         context = {'request': request, 'current_user': "Anonymous", 'access_token': "expired token", 'expires': "token has been expired"}
+#         return templates.TemplateResponse("home.html", context)
+#     except Exception:
+#         raise
