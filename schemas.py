@@ -28,6 +28,7 @@ class Car(SQLModel, table=True):
     fuel: Optional[str]  = None
     doors: Optional[int] = None
     photo: Optional[str] = None
+    photo_full_path: Optional[str] = None
     owner: Optional['User'] = Relationship(back_populates="cars")
     username: str = Field(default=None, foreign_key="user.username")
     # user = models.ForeignKey('BirdUser', null=True, related_name='added_by', on_delete=models.CASCADE)

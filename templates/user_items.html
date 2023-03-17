@@ -3,6 +3,7 @@
 {% block html_read %}
 <!-- https://stackoverflow.com/questions/71221076/how-i-can-filter-my-cards-with-searchbox-bootstrap-5-and-javascript -->
 <!-- https://getbootstrap.com/docs/4.0/components/modal/ -->
+<!-- https://stackoverflow.com/questions/39488774/how-to-use-bootstrap-validator-to-validate-file-size-and-file-type -->
 <style>
 .card-img-top {
     width: 100%;
@@ -34,7 +35,7 @@
         <h5 class="card-title">{{car.name}}</h5>
         <p class="card-text">Doors: {{ car.doors }} id: {{ car.id }}</p>
         <input type="number" name="id" value="{{ car.id }}" hidden>
-        <img class="card-img-top" src=" ../static/{{ current_user }}/{{ car.photo }}" alt="{{ car.photo }}">
+        <img class="card-img-top" src="{{ request.base_url }}static/{{ current_user }}/cars/{{car.name}}/images/{{ car.photo }}" alt="{{ car.photo }}">
       </div>
       <a class="btn btn-primary mt-auto align-self-start" data-toggle="modal" data-target="#deleteModal" id="myModal" style="margin:auto; text-align:center; display:block;">Delete</a>
       <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -47,7 +48,7 @@
               </button>
             </div>
             <div class="modal-body">
-            You're about to delete <b>{{car.name}}</b>. Are you sure?
+            You're about to delete <b>{{car.name}} {{ car.id }}</b>. Are you sure?
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -79,7 +80,7 @@
           </button>
         </div>
         <div class="modal-body">
-          <form action="add_car_ui" method="post" enctype="multipart/form-data" data-toggle="validator">
+          <form action="add_car_ui" method="post" enctype="multipart/form-data" data-toggle="validator" id="newModalForm">
             <div class="form-group">
               <label for="name" class="col-form-label">Name:</label>
               <input type="text" name="name" required>
@@ -90,9 +91,10 @@
             </div>
             <div class="form-group" form-group-file>
               <label for="file" class="col-form-label">Upload Photo:</label>
-              <input type="file" id="file" name="file" class="form-control" data-filesize="1000000" data-filesize-error="File must be smaller then Max 1MB" required/>
-              <div class="help-block with-errors"></div>
-
+              <input type="file" id="file" name="file" class="form-control" data-filesize="1000000" data-filesize-error="File must be smaller then 1MB" accept="image/*" required/>
+              <div class="invalid-feedback">Example invalid form file feedback</div>
+              <div class="help-block with-errors">
+            </div>
             <div class="form-group">
               <label for="size" class="col-form-label">Size:</label>
               <select name="size">
@@ -125,21 +127,47 @@
 
 <script>
 
-$('form[data-toggle="validator"]').validator({
-  custom: {
-    filesize: function ($el) {
-      const file_el = document.querySelector("#file");
-      console.log('element:', $el)
-      console.log('element:', $el[0].files[0].name )
-      console.log('element_size:', $el[0].files[0].size)
-      console.log('file_el_bytes ', file_el.dataset.filesize)
-      var maxBytes = file_el.dataset.filesize
-      if ($el[0].files[0].size > maxBytes) {
-        return "File must be smaller than " + maxBytes / 1024 + " kB."
-      }
-    }
-  }
-})
+// $('#deleteModal').on('hidden.bs.modal', function () {
+//     $(this).find('.modal-footer').trigger('reset');
+// })
+// $('body').on('hidden.bs.modal', '#deleteModal', function () { $(this)();})
+// .on('show.bs.modal', '#deleteModal', function() {
+//     $(this).add('modal fade');
+// })
+//  $("#newModalForm").validate({
+//     rules: {
+//       name: {
+//         required: true,
+//         minlength: 8
+//       },
+//       action: "required",
+//       file: {
+//         required: true,
+//         extension: 'jpeg, png',
+//         type: 'image/jpeg,image/png',
+//         maxSize: 1024,
+//         message: 'The selected file is not valid'
+//     },
+//     action: "required",
+//     }
+//   });
+
+
+// $('form[data-toggle="validator"]').validator({
+//   custom: {
+//     filesize: function ($el) {
+//       const file_el = document.querySelector("#file");
+//       const file = $el[0].files[0].size
+//       console.log('element:', $el[0].files[0].name )
+//       console.log('filet_size:', $el[0].files[0].size)
+//       console.log('file_el > file ', file_el > file)
+//       var maxBytes = file_el.dataset.filesize
+//       if ($el[0].files[0].size > maxBytes) {
+//         return "File must be smaller than " + maxBytes / 1024 + " kB."
+//       }
+//     }
+//   }
+// })
 </script>
 
 

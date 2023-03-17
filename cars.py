@@ -1,6 +1,7 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 from fastapi import Depends, HTTPException, APIRouter
 from sqlmodel import Session, select
+from fastapi import UploadFile
 from fastapi.responses import RedirectResponse
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.templating import Jinja2Templates
@@ -10,6 +11,7 @@ from schemas import Car, User
 from helper import wrap
 from oauth import get_current_user
 import os
+from os.path import abspath
 
 templates = Jinja2Templates(directory="templates")
 router = APIRouter(prefix="/api")
@@ -43,18 +45,18 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
         username = user.username
         form_data = await request.form()
         file = form_data['file']
-        # if file:
-        #     if file.size > 30:
-        #         raise Exception('The Image size should not be greater than 3MB')
+        car_name=form_data['name']
+        path = f'{username}/cars/{car_name}/images'
         content = await file.read()
-        dir = os.path.join('static', f'{username}')
+        dir = os.path.join('static', path)
+        print('dir:',dir)
         if not os.path.exists(dir):
                os.makedirs(dir,exist_ok=True)
         full_name = os.path.join(dir,file.filename)
         print('full_name:', full_name)
         with open(full_name, 'wb') as f:
             f.write(content)
-        car = Car(name=form_data['name'], doors=form_data['doors'], size=form_data['size'], photo=file.filename, username=username)
+        car = Car(name=form_data['name'], doors=form_data['doors'], size=form_data['size'], photo=file.filename, photo_full_path=full_name, username=username)
         db.add(car)
         db.commit()
         redirect_url = URL(request.url_for('get_user_cars'))
@@ -82,6 +84,7 @@ def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_ses
     query = db.query(Car).where(Car.id == id)
     car = query.first()
     if car:
+        print(f'deleting car {car.name} and id {id}')
         db.delete(car)
         db.commit()
         redirect_url = URL(request.url_for('get_user_cars'))
@@ -90,14 +93,42 @@ def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_ses
     else:
         raise HTTPException(status_code=404,detail=f"No car with id={id}")
 
-@router.put("/{id}", response_model=Car)
+@router.put("/cars/update_car", response_model=Car)
 def update_car(id:int, new_data:Car, db:Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
     car = db.query(Car).where(Car.id == id).first()
-    car_updated  = new_data.dict(exclude_unset=True)
-    for key, value in car_updated.items():
+    print('car', car)
+    print('new_data', new_data )
+    old_path = abspath(f"static/{user.username}/cars/{car.name}")
+    new_path = abspath(f"static/{user.username}/cars/{new_data.name}")
+    print('old_path', abspath(old_path))
+    print('new_path', abspath(new_path))
+    new_data.photo_full_path = new_path
+    new_data  = new_data.dict(exclude_unset=True)
+    os.rename(old_path, new_path)
+    print('new_data', new_data )
+    for key, value in new_data.items():
         setattr(car,key,value)
     db.commit()
     return car
+
+@router.post("/cars/update_car", response_model=Car)
+def update_car(request: Request, id: int=Form(None), name: str=Form(None), size: str=Form(None), doors: int=Form(None), db:Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
+    car = db.query(Car).where(Car.id == id).first()
+    print('car', car)
+    new_data = Car(id=id, name=name,size=size, doors=doors)
+    old_path = abspath(f"static/{user.username}/cars/{car.name}")
+    new_path = abspath(f"static/{user.username}/cars/{new_data.name}")
+    print('old_path', abspath(old_path))
+    print('new_path', abspath(new_path))
+    new_data.photo_full_path = new_path
+    new_data  = new_data.dict(exclude_unset=True)
+    os.rename(old_path, new_path)
+    print('new_data', new_data )
+    for key, value in new_data.items():
+        setattr(car,key,value)
+    db.commit()
+    return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
+
 
 @router.get("/")
 def get_cars(request: Request, user: User = Depends(get_current_user)):
