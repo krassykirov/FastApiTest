@@ -30,10 +30,6 @@ class Car(SQLModel, table=True):
     username: str = Field(default=None, foreign_key="user.username")
     # user = models.ForeignKey('BirdUser', null=True, related_name='added_by', on_delete=models.CASCADE)
 
-class CarImages(BaseModel):
-    image: List[str] = None
-    car_id: Field(default=None, foreign_key="car.id")
-
 class User(SQLModel, table=True):
     id: int = Field(primary_key=True,default=None)
     username: str = Field(sa_column=Column("username", VARCHAR, unique=True, index=True))
