@@ -7,7 +7,7 @@ from fastapi import Depends, HTTPException, APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from db import get_session
-from schemas import User, Token,TokenData
+from models import User, Token,TokenData
 from jose import JWTError, jwt, ExpiredSignatureError
 from fastapi import BackgroundTasks
 from datetime import datetime, timedelta
