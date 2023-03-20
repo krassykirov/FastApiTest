@@ -8,7 +8,7 @@ from getpass import getpass
 
 from sqlmodel import SQLModel, Session, create_engine
 
-from schemas import Car
+from models import Car
 import json
 
 
