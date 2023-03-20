@@ -21,16 +21,15 @@
     <div class="card-group col-12" id="mycard">
       <div class="col-lg-auto">
       <div class="card" style="width: 18rem;">
-          <div class="card-body" style="cursor: pointer">
+          <div class="card-body">
           <h5 class="card-title">{{car.name}}</h5>
-          <p class="card-text">Doors: {{ car.doors }} id: {{ car.id }}</p>
+          <p class="card-text">Doors: {{ car.doors }} id: {{ car.id }} Size: {{ car.size }}</p>
           <input type="number" name="id" value="{{ car.id }}" hidden>
           <img class="card-img-top" src="{{ request.base_url }}static/{{ current_user }}/cars/{{car.name}}/images/{{ car.photo }}" alt="{{ car.photo }}">
         </div>
         <div>
-          <a class="btn btn-primary mt-auto align-self-start" data-toggle="modal" data-target="#EditCar" id="myModal" style="margin:auto; text-align:center; display:block;">Edit</a>
-        </br>
-        <a class="btn btn-primary mt-auto align-self-start" data-toggle="modal" data-target="#deleteModal" id="myModal" style="margin:auto; text-align:center; display:block;">Delete</a>
+          <a class="btn btn-primary mt-auto align-self-start" data-toggle="modal" data-target="#EditCar" id="myModal" style="margin: 15px;; text-align:center; display:block;">Edit</a>
+        <a class="btn btn-danger" data-toggle="modal" data-target="#deleteModal" id="myModal" style="margin:15px; text-align:center; display:block;">Delete</a>
       </div>
         <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
           <div class="modal-dialog" role="document">
@@ -77,11 +76,11 @@
                <input type="number" name="id" value="{{ car.id }}" required hidden>
               <div class="form-group">
                 <label for="name" class="col-form-label">Name:</label>
-                <input type="text" name="name" required>
+                <input type="text" name="name">
               </div>
               <div class="form-group">
                 <label for="doors" class="col-form-label">Doors:</label>
-                <input type="number" min="2" max="8" name="doors" required>
+                <input type="number" min="2" max="8" name="doors">
               </div>
             <div class="form-group">
                 <label for="size" class="col-form-label">Size:</label>

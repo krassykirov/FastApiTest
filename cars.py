@@ -94,41 +94,28 @@ def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_ses
         raise HTTPException(status_code=404,detail=f"No car with id={id}")
 
 @router.put("/cars/update_car", response_model=Car)
-def update_car(id:int, new_data:Car, db:Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
-    car = db.query(Car).where(Car.id == id).first()
-    print('car', car)
-    print('new_data', new_data )
-    old_path = abspath(f"static/{user.username}/cars/{car.name}")
-    new_path = abspath(f"static/{user.username}/cars/{new_data.name}")
-    print('old_path', abspath(old_path))
-    print('new_path', abspath(new_path))
-    new_data.photo_full_path = new_path
-    new_data  = new_data.dict(exclude_unset=True)
-    os.rename(old_path, new_path)
-    print('new_data', new_data )
-    for key, value in new_data.items():
-        setattr(car,key,value)
-    db.commit()
-    return car
-
 @router.post("/cars/update_car", response_model=Car)
-def update_car(request: Request, id: int=Form(None), name: str=Form(None), size: str=Form(None), doors: int=Form(None), db:Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
+def update_car(request: Request, id: int=Form(), name: str=Form(None), size: str=Form(None), doors: int=Form(None), db:Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
     car = db.query(Car).where(Car.id == id).first()
-    print('car', car)
-    new_data = Car(id=id, name=name,size=size, doors=doors)
-    old_path = abspath(f"static/{user.username}/cars/{car.name}")
-    new_path = abspath(f"static/{user.username}/cars/{new_data.name}")
-    print('old_path', abspath(old_path))
-    print('new_path', abspath(new_path))
-    new_data.photo_full_path = new_path
-    new_data  = new_data.dict(exclude_unset=True)
-    os.rename(old_path, new_path)
-    print('new_data', new_data )
-    for key, value in new_data.items():
-        setattr(car,key,value)
-    db.commit()
-    return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
-
+    new_data = Car(id=id, name=name, size=size, doors=doors)
+    new_data_updated = new_data.dict(exclude_unset=True, exclude_defaults=True, exclude_none=True)
+    new_car_name = new_data_updated.get('name')
+    if new_car_name:
+        old_path = abspath(f"static/{user.username}/cars/{car.name}")
+        new_path = abspath(f"static/{user.username}/cars/{new_car_name}")
+        new_data.photo_full_path = f"static/{user.username}/cars/{new_car_name}/{car.photo}"
+        os.rename(old_path, new_path)
+        for key, value in new_data_updated.items():
+            setattr(car,key,value)
+        db.commit()
+    else:
+        for key, value in new_data_updated.items():
+            setattr(car,key,value)
+        db.commit()
+    if request.method == 'POST':
+        return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
+    elif request.method == 'PUT':
+        return car
 
 @router.get("/")
 def get_cars(request: Request, user: User = Depends(get_current_user)):
