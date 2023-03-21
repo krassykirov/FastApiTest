@@ -9,7 +9,7 @@ from fastapi import APIRouter, Request, Form, Depends
 from fastapi.templating import Jinja2Templates
 from starlette.datastructures import URL
 from db import get_session
-from models import Car, User
+from models import Car, User, Image
 from helper import wrap
 from oauth import get_current_user
 import os
@@ -32,15 +32,12 @@ def get_user_cars(request: Request, db: Session = Depends(get_session), user: Us
 
 @router.get("/cars/{id}")
 def car_details(request: Request, id:int, db: Session=Depends(get_session), user: User = Depends(get_current_user)):
-        logging.info('headers:', request.headers)
-        logging.info('request.base_url', request.base_url)
-        logging.info('request.path_param', request.path_params)
         query = select(Car).where(Car.id == id)
         results = db.exec(query)
         car = results.first()
         logging.info(f'car: {car}')
         if car:
-            return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
+            return templates.TemplateResponse("car_details.html", {"request": request,'car': car, 'current_user': user.username})
         else:
             raise HTTPException(status_code=404,detail=f"No car with id={id}")
 
@@ -48,10 +45,35 @@ def car_details(request: Request, id:int, db: Session=Depends(get_session), user
 def add_car_ui(request: Request, user: User = Depends(get_current_user)):
     return templates.TemplateResponse("add_car_ui.html", {"request":request, 'current_user': user.username})
 
+@router.post("/cars/add_photo")
+async def add_car_ui(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
+    form_data = await request.form()
+    print('form_data:', form_data)
+    car_id = form_data['id']
+    car = db.query(Car).where(Car.id == car_id).first()
+    if car:
+        car_name = form_data['name']
+        file = form_data['file']
+        content = await file.read()
+        path = f'{user.username}/cars/{car_name}/images'
+        dir = os.path.join('static', path)
+        full_name = os.path.join(dir,file.filename)
+        print('full_name:', full_name)
+        if not os.path.isfile(full_name):
+            with open(full_name, 'wb') as f:
+                f.write(content)
+                image = Image(name=car_name, image_path=full_name, car_id=car_id)
+                db.add(image)
+                db.commit()
+            print('car.images:', car.images)
+    else:
+        logging.info(f"No car with id: {car.id} exists")
+    return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
+
 @router.post("/add_car_ui")
 async def add_car_ui(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
-    try:
         form_data = await request.form()
+        print('form_data:', form_data)
         file = form_data['file']
         car_name=form_data['name']
         car = db.query(Car).where(Car.name == car_name).first()
@@ -66,31 +88,31 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
         logging.info(f'full_name: {full_name}')
         with open(full_name, 'wb') as f:
             f.write(content)
-        car = Car(name=form_data['name'], doors=form_data['doors'], size=form_data['size'], photo=file.filename, photo_full_path=full_name, username=user.username)
+            car = Car(name=form_data['name'], doors=form_data['doors'], size=form_data['size'], username=user.username)
+        print('carrr:', car)
         db.add(car)
+        db.commit()
+        image = Image(name=car_name, image_path=full_name,car_id=car.id)
+        db.add(image)
         db.commit()
         redirect_url = URL(request.url_for('get_user_cars'))
         response = RedirectResponse(redirect_url, status_code=303)
-        return response
-    except Exception as e:
-        logging.info({"message": f"There was an error uploading the file:{e}"})
-        redirect_url = URL(request.url_for('get_user_cars'))
-        response = RedirectResponse(redirect_url, status_code=303)
-        return response
-    finally:
         await file.close()
+        return response
 
 @router.put("/cars/update_car", response_model=Car)
 @router.post("/cars/update_car", response_model=Car)
 def update_car(request: Request, id: int=Form(), name: str=Form(None), size: str=Form(None), doors: int=Form(None), db:Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
     car = db.query(Car).where(Car.id == id).first()
+    print('image_path:', car.images[0].image_path.split('/')[-1])
     new_data = Car(id=id, name=name, size=size, doors=doors)
     new_data_updated = new_data.dict(exclude_unset=True, exclude_defaults=True, exclude_none=True)
     new_car_name = new_data_updated.get('name')
+    print('pathhhh', f"static/{user.username}/cars/{new_car_name}/{car.images[0].image_path.split('/')[-1]}")
     if new_car_name:
         old_path = abspath(f"static/{user.username}/cars/{car.name}")
         new_path = abspath(f"static/{user.username}/cars/{new_car_name}")
-        new_data.photo_full_path = f"static/{user.username}/cars/{new_car_name}/{car.photo}"
+        car.images[0].image_path = f"static/{user.username}/cars/{new_car_name}/images/{car.images[0].image_path.split('/')[-1]}"
         os.rename(old_path, new_path)
         for key, value in new_data_updated.items():
             setattr(car,key,value)

@@ -31,11 +31,11 @@
     {% for car in cars %}
     <div class="col-lg-auto">
     <div class="card" style="width: 18rem;">
-        <div onclick="location.href='{{ url_for('car_details',id=car.id) }}';" value="car_details" class="card-body" style="cursor: pointer">
+        <div onclick="location.href='{{ url_for('car_details', id=car.id) }}';" value="car_details" class="card-body" style="cursor: pointer">
         <h5 class="card-title">{{car.name}}</h5>
         <p class="card-text">Doors: {{ car.doors }} id: {{ car.id }}</p>
         <input type="number" name="id" value="{{ car.id }}" hidden>
-        <img class="card-img-top" src="{{ request.base_url }}static/{{ current_user }}/cars/{{car.name}}/images/{{ car.photo }}" alt="{{ car.photo }}">
+        <img class="card-img-top" src="{{ request.base_url }}{{ car.images[0].image_path }}">
       </div>
       <a class="btn btn-primary mt-auto align-self-start" data-toggle="modal" data-target="#deleteModal" id="myModal" style="margin:auto; text-align:center; display:block;">Delete</a>
       <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -115,6 +115,7 @@
       </div>
     </div>
   </div>
+
 
 <script>
     $("#filter").on("keyup", function() {
