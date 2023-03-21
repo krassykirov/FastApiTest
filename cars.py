@@ -51,6 +51,7 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
     print('form_data:', form_data)
     car_id = form_data['id']
     car = db.query(Car).where(Car.id == car_id).first()
+    print('car:', car)
     if car:
         car_name = form_data['name']
         file = form_data['file']
@@ -66,6 +67,8 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
                 db.add(image)
                 db.commit()
             print('car.images:', car.images)
+        else:
+            logging.info(f"Image with name: {file.filename} already exists")
     else:
         logging.info(f"No car with id: {car.id} exists")
     return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
@@ -112,7 +115,9 @@ def update_car(request: Request, id: int=Form(), name: str=Form(None), size: str
     if new_car_name:
         old_path = abspath(f"static/{user.username}/cars/{car.name}")
         new_path = abspath(f"static/{user.username}/cars/{new_car_name}")
-        car.images[0].image_path = f"static/{user.username}/cars/{new_car_name}/images/{car.images[0].image_path.split('/')[-1]}"
+        for image in car.images:
+            image.image_path = f"static/{user.username}/cars/{new_car_name}/images/{image.image_path.split('/')[-1]}"
+            image.name = image.image_path.split('/')[-1]
         os.rename(old_path, new_path)
         for key, value in new_data_updated.items():
             setattr(car,key,value)
@@ -146,6 +151,24 @@ def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_ses
         return response
     else:
         raise HTTPException(status_code=404,detail=f"No car with id={id}")
+
+@router.post("/cars/delete_image", status_code=204)
+@router.post("/delete_image", status_code=204)
+def delete_car(request: Request, id: int=Form(None), car_id: int=Form(None), db: Session=Depends(get_session), user: User = Depends(get_current_user)):
+    print('id:', id)
+    print('car_id:', car_id)
+    image = db.query(Image).where(Image.id == id).first()
+    car = db.query(Car).where(Car.id == car_id).first()
+    image_to_delete = abspath(image.image_path)
+    print('image_to_delete:', image.image_path)
+    os.remove(image_to_delete)
+    if image:
+        logging.info(f'deleting image {image.name} and id {id}')
+        db.delete(image)
+        db.commit()
+        return templates.TemplateResponse("car_details.html", {"request":request, 'car': car, 'current_user': user.username})
+    else:
+        raise HTTPException(status_code=404,detail=f"No Image with id={id}")
 
 @router.post("/", response_model=Car)
 def add_car(car: Car, db: Session=Depends(get_session),user: User = Depends(get_current_user)) -> Car:
