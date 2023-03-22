@@ -42,7 +42,10 @@
       </form>
       {% else %}
       <form class="form-inline my-2 my-lg-0">
-        <input onclick="location.href='{{ url_for('login') }}';" value="Login" class="btn btn-primary" type="button">
+        <input onclick="location.href='{{ url_for('login') }}';" value="Login" class="btn btn-primary" type="button" style="margin: 2px;">
+     </form>
+      <form class="form-inline my-2 my-lg-0">
+        <input onclick="location.href='{{ url_for('signup') }}';" value="SignUp" class="btn btn-info" type="button">
      </form>
       {% endif %}
     </div>

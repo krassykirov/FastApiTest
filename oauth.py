@@ -1,5 +1,5 @@
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Depends
 from typing import Union
 from sqlmodel import Session, select
 from starlette import status
@@ -120,6 +120,30 @@ def login(request: Request):
     response = templates.TemplateResponse("login.html",{"request":request})
     return response
 
+@oauth_router.get("/signup")
+def login(request: Request):
+    response = templates.TemplateResponse("signup.html",{"request":request})
+    return response
+
+@oauth_router.post("/signup")
+async def signup(request: Request, db: Session = Depends(get_session)):
+    form_data = await request.form()
+    print('form_data:', form_data)
+    username = form_data.get('username')
+    passwd = form_data.get('password')
+    passwd2 = form_data.get('password2')
+    print(username,passwd, passwd2)
+    assert passwd == passwd2
+    query = select(User).where(User.username == username)
+    user = db.exec(query).first()
+    if not user:
+        user = User(username=username)
+        user.set_password(passwd)
+        db.add(user)
+        db.commit()
+    response = templates.TemplateResponse("login.html",{"request":request})
+    return response
+
 
 @oauth_router.get("/logout")
 def route_logout_and_remove_cookie(request: Request):
@@ -127,21 +151,3 @@ def route_logout_and_remove_cookie(request: Request):
     response = templates.TemplateResponse("login.html",{"request":request, 'current_user': None})
     response.delete_cookie(key="access_token")
     return response
-
-
-# def get_username_from_token(request: Request):
-#     try:
-#         token = request.cookies.get("access_token") #or request.headers.get("access_token")
-#         if token:
-#             access_token = token.split()[1]
-#             payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-#             username = payload.get("sub")
-#             return username
-#         else:
-#             context = {'request': request}
-#             return templates.TemplateResponse("login.html", context)
-#     except ExpiredSignatureError:
-#         context = {'request': request, 'current_user': "Anonymous", 'access_token': "expired token", 'expires': "token has been expired"}
-#         return templates.TemplateResponse("home.html", context)
-#     except Exception:
-#         raise

@@ -17,7 +17,7 @@
 
   </style>
 
-<h5 class="card"> Car Details</h5>
+<div> Car Details</div>
 <div class="row">
     <div class="card-group col-12" id="mycard">
       <div class="col-lg-auto">
@@ -64,7 +64,9 @@
     </div>
     </div>
     </div>
-
+    {%  if message  %}
+    <p> <b> {{  message  }} </b></p>
+    {%  endif %}
     <div class="modal fade" id="EditCar" tabindex="-1" role="dialog" aria-labelledby="EditCarlLabel" aria-hidden="true">
       <div class="modal-dialog" role="document">
         <div class="modal-content">

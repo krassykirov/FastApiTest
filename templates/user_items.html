@@ -26,6 +26,9 @@
         </div>
       </div>
 <br/>
+{%  if message  %}
+  <p> <b> {{  message  }} </b></p>
+{%  endif %}
 <div class="row">
   <div class="card-group col-12" id="mycard">
     {% for car in cars %}

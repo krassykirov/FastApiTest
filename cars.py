@@ -41,9 +41,38 @@ def car_details(request: Request, id:int, db: Session=Depends(get_session), user
         else:
             raise HTTPException(status_code=404,detail=f"No car with id={id}")
 
-@router.get("/add_car_ui")
-def add_car_ui(request: Request, user: User = Depends(get_current_user)):
-    return templates.TemplateResponse("add_car_ui.html", {"request":request, 'current_user': user.username})
+
+@router.post("/add_car_ui")
+async def add_car_ui(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
+        form_data = await request.form()
+        print('form_data:', form_data)
+        file = form_data['file']
+        car_name=form_data['name']
+        query = db.query(Car).where(Car.name == car_name).all()
+        car = [car for car in query if car.username == user.username]
+        if car:
+            logging.info(f"car with that name already exists!")
+            return templates.TemplateResponse("user_items.html", {"request":request,'cars': user.cars,'current_user': user.username,
+                                                                   'message': "Car with that name already exists!"})
+        path = f'{user.username}/cars/{car_name}/images'
+        content = await file.read()
+        dir = os.path.join('static', path)
+        if not os.path.exists(dir):
+               os.makedirs(dir,exist_ok=True)
+        full_name = os.path.join(dir, file.filename)
+        logging.info(f'full_name: {full_name}')
+        with open(full_name, 'wb') as f:
+            f.write(content)
+            car = Car(name=form_data['name'], doors=form_data['doors'], size=form_data['size'], username=user.username)
+        db.add(car)
+        db.commit()
+        image = Image(name=car_name, image_path=full_name,car_id=car.id)
+        db.add(image)
+        db.commit()
+        redirect_url = URL(request.url_for('get_user_cars'))
+        response = RedirectResponse(redirect_url, status_code=303)
+        await file.close()
+        return response
 
 @router.post("/cars/add_photo")
 @router.post("/add_photo")
@@ -72,39 +101,11 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
             return response
         else:
             logging.info(f"Image with name: {file.filename} already exists")
+            return templates.TemplateResponse("car_details.html", {"request":request, 'car': car, 'current_user': user.username,
+                                                                   'message': "Image with that name already exists!"})
     else:
         logging.info(f"No car with id: {car.id} exists")
     return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
-
-@router.post("/add_car_ui")
-async def add_car_ui(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
-        form_data = await request.form()
-        print('form_data:', form_data)
-        file = form_data['file']
-        car_name=form_data['name']
-        car = db.query(Car).where(Car.name == car_name).first()
-        if car:
-            logging.info(f"car with that name already exists!")
-        path = f'{user.username}/cars/{car_name}/images'
-        content = await file.read()
-        dir = os.path.join('static', path)
-        if not os.path.exists(dir):
-               os.makedirs(dir,exist_ok=True)
-        full_name = os.path.join(dir,file.filename)
-        logging.info(f'full_name: {full_name}')
-        with open(full_name, 'wb') as f:
-            f.write(content)
-            car = Car(name=form_data['name'], doors=form_data['doors'], size=form_data['size'], username=user.username)
-        print('carrr:', car)
-        db.add(car)
-        db.commit()
-        image = Image(name=car_name, image_path=full_name,car_id=car.id)
-        db.add(image)
-        db.commit()
-        redirect_url = URL(request.url_for('get_user_cars'))
-        response = RedirectResponse(redirect_url, status_code=303)
-        await file.close()
-        return response
 
 @router.put("/cars/update_car", response_model=Car)
 @router.post("/cars/update_car", response_model=Car)
@@ -164,7 +165,11 @@ async def delete_image(request: Request, id: int=Form(None), car_id: int=Form(No
     car = db.query(Car).where(Car.id == car_id).first()
     image_to_delete = abspath(image.image_path)
     print('image_to_delete:', image.image_path)
-    os.remove(image_to_delete)
+    try:
+        os.remove(image_to_delete)
+    except OSError as e:
+        logging.info("Error: %s" % (e.strerror))
+        raise HTTPException(status_code=400,detail=f"No able to remove image {image.image_path}")
     if image:
         logging.info(f'deleting image {image.name} and id {id}')
         db.delete(image)

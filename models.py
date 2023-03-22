@@ -20,7 +20,7 @@ class Image(SQLModel, table=True):
     car_id: int = Field(default=None, foreign_key="car.id")
 class Car(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    name: str = Field(sa_column=Column("name", VARCHAR, unique=True, index=True))
+    name: str = Field(sa_column=Column("name", VARCHAR, index=True))
     size: Optional[str]  = None
     fuel: Optional[str]  = None
     doors: Optional[int] = None
