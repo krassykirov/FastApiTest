@@ -46,6 +46,7 @@ def add_car_ui(request: Request, user: User = Depends(get_current_user)):
     return templates.TemplateResponse("add_car_ui.html", {"request":request, 'current_user': user.username})
 
 @router.post("/cars/add_photo")
+@router.post("/add_photo")
 async def add_car_ui(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
     form_data = await request.form()
     print('form_data:', form_data)
@@ -66,7 +67,9 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
                 image = Image(name=car_name, image_path=full_name, car_id=car_id)
                 db.add(image)
                 db.commit()
-            print('car.images:', car.images)
+            redirect_url = URL(request.url_for('car_details', id=car.id))
+            response = RedirectResponse(redirect_url, status_code=303)
+            return response
         else:
             logging.info(f"Image with name: {file.filename} already exists")
     else:
@@ -154,7 +157,7 @@ def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_ses
 
 @router.post("/cars/delete_image", status_code=204)
 @router.post("/delete_image", status_code=204)
-def delete_car(request: Request, id: int=Form(None), car_id: int=Form(None), db: Session=Depends(get_session), user: User = Depends(get_current_user)):
+async def delete_image(request: Request, id: int=Form(None), car_id: int=Form(None), db: Session=Depends(get_session), user: User = Depends(get_current_user)):
     print('id:', id)
     print('car_id:', car_id)
     image = db.query(Image).where(Image.id == id).first()
@@ -166,7 +169,9 @@ def delete_car(request: Request, id: int=Form(None), car_id: int=Form(None), db:
         logging.info(f'deleting image {image.name} and id {id}')
         db.delete(image)
         db.commit()
-        return templates.TemplateResponse("car_details.html", {"request":request, 'car': car, 'current_user': user.username})
+        redirect_url = URL(request.url_for('car_details', id=car.id))
+        response = RedirectResponse(redirect_url, status_code=303)
+        return response #templates.TemplateResponse("car_details.html", {"request":request, 'car': car, 'current_user': user.username})
     else:
         raise HTTPException(status_code=404,detail=f"No Image with id={id}")
 

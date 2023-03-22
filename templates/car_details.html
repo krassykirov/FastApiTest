@@ -21,7 +21,7 @@
 <div class="row">
     <div class="card-group col-12" id="mycard">
       <div class="col-lg-auto">
-      <div class="card" style="width: 18rem;">
+      <div class="card" style="width: 30rem;">
           <div class="card-body">
           <h5 class="card-title">{{car.name}}</h5>
           <p class="card-text">Doors: {{ car.doors }} id: {{ car.id }} Size: {{ car.size }}</p>
@@ -151,11 +151,6 @@
         <p class="card-text">Name: {{ image.name }} ID: {{ image.id }}</p>
         <input type="number" name="id" value="{{ car.id }}" hidden>
         <img class="card-img-top" src="{{ request.base_url }}{{ image.image_path }}">
-        <div class="form-check-inline">
-          <label class="form-check-label" for="check1">
-              <input type="checkbox" class="form-check-input" id="check1" name="vehicle1" value="something" checked="">Option 1
-          </label>
-      </div>
       </div>
       <a class="btn btn-primary mt-auto align-self-start" data-toggle="modal" data-target='#modal{{ image.id }}' id="PhotoModal" style="margin:auto; text-align:center; display:block;">Delete</a>
       <div class="modal fade" id="modal{{ image.id }}" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -168,7 +163,7 @@
               </button>
             </div>
             <div class="modal-body">
-            You're about to delete <b>{{image.name}} {{ image.id }}</b>. Are you sure?
+            You're about to delete <b>Image:{{image.name}} ID: {{ image.id }}</b>. Are you sure?
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -191,17 +186,5 @@
   </div>
   </div>
   {% endif %}
-
-  <script>
-
-    $('.submitBtn').click(function() {
-      $('#deletename_id').text($(this).parents('form').find('input').eq(0).val());
-    });
-
-    $('#delete').click(function(){
-        $('#formfield').submit();
-    });
-</script>
-
 
 {% endblock %}
