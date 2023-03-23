@@ -109,12 +109,6 @@ def login_access_token(*, response: Response, form_data: OAuth2PasswordRequestFo
             detail="Username or password incorrect"
         )
 
-@oauth_router.get('/me', include_in_schema=False)
-def read_users_me(request: Request, current_user: User = Depends(get_current_user)):
-    header_token = request.headers.get('access_token')
-    cookie_token= request.cookies.get('access_token')
-    return header_token, cookie_token, current_user
-
 @oauth_router.get("/login", include_in_schema=False)
 def login(request: Request):
     response = templates.TemplateResponse("login.html",{"request":request})
@@ -143,7 +137,6 @@ async def signup(request: Request, db: Session = Depends(get_session)):
         db.commit()
     response = templates.TemplateResponse("login.html",{"request":request})
     return response
-
 
 @oauth_router.get("/logout", include_in_schema=False)
 def route_logout_and_remove_cookie(request: Request):

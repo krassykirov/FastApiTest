@@ -125,8 +125,10 @@
 <script>
     $("#filter").on("keyup", function() {
     var value = $(this).val().toLowerCase();
+    console.log('value:', value)
     $("#mycard > div").filter(function() {
       $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+      console.log( $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1))
     });
   });
  </script>

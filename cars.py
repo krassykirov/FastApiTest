@@ -76,10 +76,8 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
 @router.post("/add_photo", include_in_schema=False)
 async def add_car_ui(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
     form_data = await request.form()
-    print('form_data:', form_data)
     car_id = form_data['id']
     car = db.query(Car).where(Car.id == car_id).first()
-    print('car:', car)
     if car:
         car_name = form_data['name']
         file = form_data['file']
@@ -108,7 +106,7 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
     return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
 
 @router.put("/cars/update_car", response_model=Car)
-@router.post("/cars/update_car", response_model=Car)
+@router.post("/cars/update_car", response_model=Car, include_in_schema=False)
 def update_car(request: Request, id: int=Form(), name: str=Form(None), size: str=Form(None), doors: int=Form(None), db:Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
     car = db.query(Car).where(Car.id == id).first()
     new_data = Car(id=id, name=name, size=size, doors=doors)
@@ -133,25 +131,31 @@ def update_car(request: Request, id: int=Form(), name: str=Form(None), size: str
     elif request.method == 'PUT':
         return car
 
-@router.post("/cars/delete_car", status_code=204)
-@router.post("/delete_car", status_code=204)
+@router.post("/cars/delete_car", status_code=204, include_in_schema=False)
+@router.post("/delete_car", status_code=204, include_in_schema=False)
+@router.delete("/delete_car", status_code=204)
 def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_session), user: User = Depends(get_current_user)) -> None:
     car = db.query(Car).where(Car.id == id).first()
-    if car:
+    if car and car.username == user.username:
         logging.info(f'deleting car {car.name} and id {id}')
         db.delete(car)
         db.commit()
         dir_to_delete = abspath(f"static/{user.username}/cars/{car.name}")
+        # dir_to_delete_all = abspath(f"static/{car.username}/cars/{car.name}")
         logging.info(f"Deleting car directory: {dir_to_delete}")
         try:
-            shutil.rmtree(dir_to_delete)
+            shutil.rmtree(dir_to_delete) # onerror={'error'}
         except OSError as e:
-            logging.info("Error: %s : %s" % (dir_to_delete, e.strerror))
-        redirect_url = URL(request.url_for('get_user_cars'))
-        response = RedirectResponse(redirect_url, status_code=303)
-        return response
+            logging.info(f"Error deleting the directory: {dir_to_delete}, {e.strerror}")
+        if request.method == "POST":
+            redirect_url = URL(request.url_for('get_user_cars'))
+            response = RedirectResponse(redirect_url, status_code=303)
+            return response
+        else:
+            logging.info(f"deleted car {car.name} with id: {car.id}")
+            return
     else:
-        raise HTTPException(status_code=404,detail=f"No car with id={id}")
+        raise HTTPException(status_code=404,detail=f"No car with id={id} and owner {user.username}")
 
 @router.post("/cars/delete_image", status_code=204)
 @router.post("/delete_image", status_code=204)
@@ -179,10 +183,8 @@ async def delete_image(request: Request, id: int=Form(None), car_id: int=Form(No
 
 @router.post("/", response_model=Car)
 async def add_car(request: Request, name: str=Form(None), size: str=Form(None), doors: int=Form(None),db: Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
-        # form_data = await request.form()
         print(name,doors,size)
         new_car = Car(name=name, doors=doors, size=size, username=user.username)
-        # car = Car(name=form_data['name'], doors=form_data['doors'], size=form_data['size'], username=user.username)
         db.add(new_car)
         db.commit()
         db.refresh(new_car)
