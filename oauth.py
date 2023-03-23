@@ -24,7 +24,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 3600  # 30 minutes
 ALGORITHM = "HS256"
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
-@oauth_router.get("/")
+@oauth_router.get("/", include_in_schema=False)
 @wrap
 def home(request: Request):
     # print("headers:", request.headers.get('cookie').split("=")[1].split()[1].replace('"',""))
@@ -87,7 +87,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
-@oauth_router.post('/token', response_model=Token)
+@oauth_router.post('/token', response_model=Token, include_in_schema=False  )
 def login_access_token(*, response: Response, form_data: OAuth2PasswordRequestForm=Depends(),
                 db: Session = Depends(get_session), background_tasks: BackgroundTasks ):
     query = select(User).where(User.username == form_data.username)
@@ -109,23 +109,23 @@ def login_access_token(*, response: Response, form_data: OAuth2PasswordRequestFo
             detail="Username or password incorrect"
         )
 
-@oauth_router.get('/me')
+@oauth_router.get('/me', include_in_schema=False)
 def read_users_me(request: Request, current_user: User = Depends(get_current_user)):
     header_token = request.headers.get('access_token')
     cookie_token= request.cookies.get('access_token')
     return header_token, cookie_token, current_user
 
-@oauth_router.get("/login")
+@oauth_router.get("/login", include_in_schema=False)
 def login(request: Request):
     response = templates.TemplateResponse("login.html",{"request":request})
     return response
 
-@oauth_router.get("/signup")
+@oauth_router.get("/signup", include_in_schema=False)
 def login(request: Request):
     response = templates.TemplateResponse("signup.html",{"request":request})
     return response
 
-@oauth_router.post("/signup")
+@oauth_router.post("/signup", include_in_schema=False)
 async def signup(request: Request, db: Session = Depends(get_session)):
     form_data = await request.form()
     print('form_data:', form_data)
@@ -145,7 +145,7 @@ async def signup(request: Request, db: Session = Depends(get_session)):
     return response
 
 
-@oauth_router.get("/logout")
+@oauth_router.get("/logout", include_in_schema=False)
 def route_logout_and_remove_cookie(request: Request):
     response = RedirectResponse("login.html", status_code=302)
     response = templates.TemplateResponse("login.html",{"request":request, 'current_user': None})

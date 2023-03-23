@@ -22,11 +22,11 @@ templates = Jinja2Templates(directory="templates")
 router = APIRouter(prefix="/api")
 
 
-@router.get("/")  # to be removed
+@router.get("/", include_in_schema=False)  # to be removed
 def get_cars(request: Request, user: User = Depends(get_current_user)):
     return templates.TemplateResponse("search_results.html", {"request":request, 'current_user': user.username})
 
-@router.get("/cars")
+@router.get("/cars", include_in_schema=False)
 def get_user_cars(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
     return templates.TemplateResponse("user_items.html", {"request":request,'cars': user.cars,'current_user': user.username})
 
@@ -41,11 +41,9 @@ def car_details(request: Request, id:int, db: Session=Depends(get_session), user
         else:
             raise HTTPException(status_code=404,detail=f"No car with id={id}")
 
-
-@router.post("/add_car_ui")
+@router.post("/add_car_ui", include_in_schema=False)
 async def add_car_ui(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
         form_data = await request.form()
-        print('form_data:', form_data)
         file = form_data['file']
         car_name=form_data['name']
         query = db.query(Car).where(Car.name == car_name).all()
@@ -74,8 +72,8 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
         await file.close()
         return response
 
-@router.post("/cars/add_photo")
-@router.post("/add_photo")
+@router.post("/cars/add_photo", include_in_schema=False)
+@router.post("/add_photo", include_in_schema=False)
 async def add_car_ui(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
     form_data = await request.form()
     print('form_data:', form_data)
@@ -88,6 +86,8 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
         content = await file.read()
         path = f'{user.username}/cars/{car_name}/images'
         dir = os.path.join('static', path)
+        if not os.path.exists(dir):
+               os.makedirs(dir,exist_ok=True)
         full_name = os.path.join(dir,file.filename)
         print('full_name:', full_name)
         if not os.path.isfile(full_name):
@@ -111,11 +111,9 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
 @router.post("/cars/update_car", response_model=Car)
 def update_car(request: Request, id: int=Form(), name: str=Form(None), size: str=Form(None), doors: int=Form(None), db:Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
     car = db.query(Car).where(Car.id == id).first()
-    print('image_path:', car.images[0].image_path.split('/')[-1])
     new_data = Car(id=id, name=name, size=size, doors=doors)
     new_data_updated = new_data.dict(exclude_unset=True, exclude_defaults=True, exclude_none=True)
     new_car_name = new_data_updated.get('name')
-    print('pathhhh', f"static/{user.username}/cars/{new_car_name}/{car.images[0].image_path.split('/')[-1]}")
     if new_car_name:
         old_path = abspath(f"static/{user.username}/cars/{car.name}")
         new_path = abspath(f"static/{user.username}/cars/{new_car_name}")
@@ -124,11 +122,11 @@ def update_car(request: Request, id: int=Form(), name: str=Form(None), size: str
             image.name = image.image_path.split('/')[-1]
         os.rename(old_path, new_path)
         for key, value in new_data_updated.items():
-            setattr(car,key,value)
+            setattr(car, key, value)
         db.commit()
     else:
         for key, value in new_data_updated.items():
-            setattr(car,key,value)
+            setattr(car, key, value)
         db.commit()
     if request.method == 'POST':
         return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
@@ -138,8 +136,7 @@ def update_car(request: Request, id: int=Form(), name: str=Form(None), size: str
 @router.post("/cars/delete_car", status_code=204)
 @router.post("/delete_car", status_code=204)
 def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_session), user: User = Depends(get_current_user)) -> None:
-    query = db.query(Car).where(Car.id == id)
-    car = query.first()
+    car = db.query(Car).where(Car.id == id).first()
     if car:
         logging.info(f'deleting car {car.name} and id {id}')
         db.delete(car)
@@ -181,14 +178,17 @@ async def delete_image(request: Request, id: int=Form(None), car_id: int=Form(No
         raise HTTPException(status_code=404,detail=f"No Image with id={id}")
 
 @router.post("/", response_model=Car)
-def add_car(car: Car, db: Session=Depends(get_session),user: User = Depends(get_current_user)) -> Car:
-        new_car = Car.from_orm(car)
+async def add_car(request: Request, name: str=Form(None), size: str=Form(None), doors: int=Form(None),db: Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
+        # form_data = await request.form()
+        print(name,doors,size)
+        new_car = Car(name=name, doors=doors, size=size, username=user.username)
+        # car = Car(name=form_data['name'], doors=form_data['doors'], size=form_data['size'], username=user.username)
         db.add(new_car)
         db.commit()
         db.refresh(new_car)
         return new_car
 
-@router.post("/search")
+@router.post("/search", include_in_schema=False)
 @wrap
 def search(*, name: str=Form(None), size: str=Form(None), doors: int=Form(None), db: Session = Depends(get_session),
            user: User = Depends(get_current_user), request: Request):
