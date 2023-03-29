@@ -1,5 +1,6 @@
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+
 from typing import Union
 from sqlmodel import Session, select
 from starlette import status
@@ -20,7 +21,7 @@ templates = Jinja2Templates(directory="templates")
 oauth_router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="token")
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 3600  # 30 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 1  # 30 minutes
 ALGORITHM = "HS256"
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
@@ -42,10 +43,10 @@ def home(request: Request):
                 context = {'request': request, 'current_user': username, 'access_token': access_token, 'expires': converted_expires}
                 return templates.TemplateResponse("home.html", context)
         else:
-            context = {'request': request, 'expires': "token has been expired please login"}
+            context = {'request': request, 'message': "Not Authorized please login"}
             return templates.TemplateResponse("login.html", context)
     except ExpiredSignatureError:
-        context = {'request': request, 'expires': "token has been expired please login"}
+        context = {'request': request, 'message': "Session expired please login"}
         return templates.TemplateResponse("login.html", context)
     except Exception:
         raise
@@ -60,13 +61,14 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)) ->User:
+def get_current_user(request: Request, token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)) ->User:
     # credentials_exception = HTTPException(
     #     status_code=status.HTTP_401_UNAUTHORIZED,
     #     detail="Could not validate credentials",
     #     headers={"WWW-Authenticate": "Bearer"},
     # )
     credentials_exception = HTTPException(status_code=302, detail="Not authorized", headers = {"Location": "/login"} )
+    # expired_session_exception = HTTPException(status_code=302, detail="Session expired", headers = {"Location": "/login"} )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -84,7 +86,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     converted_expires = datetime.fromtimestamp(expires)
     if datetime.utcnow() > converted_expires:
-        raise credentials_exception
+        response = templates.TemplateResponse("login.html",{"request":request, 'message': "Session expired"})
+        return response
     return user
 
 @oauth_router.post('/token', response_model=Token, include_in_schema=False  )
