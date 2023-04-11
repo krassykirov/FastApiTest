@@ -110,32 +110,31 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
 def update_car(request: Request, id: int=Form(), name: str=Form(None), size: str=Form(None), doors: int=Form(None), db:Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
     car = db.query(Car).where(Car.id == id).first()
     new_car = db.query(Car).where(Car.name == name).first()
-    if not new_car:
-        new_data = Car(id=id, name=name, size=size, doors=doors)
-        new_data_updated = new_data.dict(exclude_unset=True, exclude_defaults=True, exclude_none=True)
-        new_car_name = new_data_updated.get('name')
-        if new_car_name:
-            old_path = abspath(f"static/{user.username}/cars/{car.name}")
-            new_path = abspath(f"static/{user.username}/cars/{new_car_name}")
-            for image in car.images:
-                image.image_path = f"static/{user.username}/cars/{new_car_name}/images/{image.image_path.split('/')[-1]}"
-                image.name = image.image_path.split('/')[-1]
-            os.rename(old_path, new_path)
-            for key, value in new_data_updated.items():
-                setattr(car, key, value)
-            db.commit()
-        else:
-            for key, value in new_data_updated.items():
-                setattr(car, key, value)
-            db.commit()
-        if request.method == 'POST':
-            return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
-        elif request.method == 'PUT':
-            return car
-    else:
-        return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 
+    if new_car:
+        return templates.TemplateResponse("car_details.html", {"request":request,'car': car,
                                                                'message': f"Car with name {name} already exists!",
                                                                'current_user': user.username})
+    new_data = Car(id=id, name=name, size=size, doors=doors)
+    new_data_updated = new_data.dict(exclude_unset=True, exclude_defaults=True, exclude_none=True)
+    new_car_name = new_data_updated.get('name')
+    if new_car_name:
+        old_path = abspath(f"static/{user.username}/cars/{car.name}")
+        new_path = abspath(f"static/{user.username}/cars/{new_car_name}")
+        for image in car.images:
+            image.image_path = f"static/{user.username}/cars/{new_car_name}/images/{image.image_path.split('/')[-1]}"
+            image.name = image.image_path.split('/')[-1]
+        os.rename(old_path, new_path)
+        for key, value in new_data_updated.items():
+            setattr(car, key, value)
+        db.commit()
+    else:
+        for key, value in new_data_updated.items():
+            setattr(car, key, value)
+        db.commit()
+    if request.method == 'POST':
+        return templates.TemplateResponse("car_details.html", {"request":request,'car': car, 'current_user': user.username})
+    elif request.method == 'PUT':
+        return car
 
 @router.post("/cars/delete_car", status_code=204, include_in_schema=False)
 @router.post("/delete_car", status_code=204, include_in_schema=False)
