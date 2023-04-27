@@ -21,7 +21,7 @@ templates = Jinja2Templates(directory="templates")
 oauth_router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearerCookie(tokenUrl="token")
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 1  # 30 minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 15  # 30 minutes
 ALGORITHM = "HS256"
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
@@ -37,8 +37,6 @@ def home(request: Request):
             username = payload.get("sub")
             expires = payload.get("exp")
             converted_expires = datetime.fromtimestamp(expires)
-            print('converted_expires', converted_expires)
-            print('datetime.now()', datetime.now())
             if datetime.now() < converted_expires:
                 context = {'request': request, 'current_user': username, 'access_token': access_token, 'expires': converted_expires}
                 return templates.TemplateResponse("home.html", context)
@@ -125,11 +123,9 @@ def login(request: Request):
 @oauth_router.post("/signup", include_in_schema=False)
 async def signup(request: Request, db: Session = Depends(get_session)):
     form_data = await request.form()
-    print('form_data:', form_data)
     username = form_data.get('username')
     passwd = form_data.get('password')
     passwd2 = form_data.get('password2')
-    print(username,passwd, passwd2)
     assert passwd == passwd2
     query = select(User).where(User.username == username)
     user = db.exec(query).first()

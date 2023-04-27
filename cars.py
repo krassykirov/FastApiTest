@@ -87,7 +87,6 @@ async def add_car_ui(request: Request, db: Session = Depends(get_session), user:
         if not os.path.exists(dir):
                os.makedirs(dir,exist_ok=True)
         full_name = os.path.join(dir,file.filename)
-        print('full_name:', full_name)
         if not os.path.isfile(full_name):
             with open(full_name, 'wb') as f:
                 f.write(content)
@@ -165,12 +164,9 @@ def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_ses
 @router.post("/cars/delete_image", status_code=204)
 @router.post("/delete_image", status_code=204)
 async def delete_image(request: Request, id: int=Form(None), car_id: int=Form(None), db: Session=Depends(get_session), user: User = Depends(get_current_user)):
-    print('id:', id)
-    print('car_id:', car_id)
     image = db.query(Image).where(Image.id == id).first()
     car = db.query(Car).where(Car.id == car_id).first()
     image_to_delete = abspath(image.image_path)
-    print('image_to_delete:', image.image_path)
     try:
         os.remove(image_to_delete)
     except OSError as e:
@@ -188,7 +184,6 @@ async def delete_image(request: Request, id: int=Form(None), car_id: int=Form(No
 
 @router.post("/", response_model=Car)
 async def add_car(request: Request, name: str=Form(None), size: str=Form(None), doors: int=Form(None),db: Session=Depends(get_session), user: User = Depends(get_current_user)) -> Car:
-        print(name,doors,size)
         new_car = Car(name=name, doors=doors, size=size, username=user.username)
         db.add(new_car)
         db.commit()
