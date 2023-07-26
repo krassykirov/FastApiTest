@@ -1,6 +1,6 @@
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi import APIRouter, Depends, Request
-
+from starlette.datastructures import URL
 from typing import Union
 from sqlmodel import Session, select
 from starlette import status
@@ -25,6 +25,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 15  # 30 minutes
 ALGORITHM = "HS256"
 SECRET_KEY = "09d25e094faa6ca2556c818166b7a9563b93f7099f6f0f4caa6cf63b88e8d3e7"
 
+
 @oauth_router.get("/", include_in_schema=False)
 @wrap
 def home(request: Request):
@@ -38,8 +39,11 @@ def home(request: Request):
             expires = payload.get("exp")
             converted_expires = datetime.fromtimestamp(expires)
             if datetime.now() < converted_expires:
-                context = {'request': request, 'current_user': username, 'access_token': access_token, 'expires': converted_expires}
-                return templates.TemplateResponse("home.html", context)
+                # context = {'request': request, 'current_user': username, 'access_token': access_token, 'expires': converted_expires}
+                # print("context: ", context)
+                redirect_url = URL(request.url_for('get_user_cars'))
+                response = RedirectResponse(redirect_url, status_code=303)
+                return response
         else:
             context = {'request': request, 'message': "Not Authorized please login"}
             return templates.TemplateResponse("login.html", context)
@@ -89,7 +93,7 @@ def get_current_user(request: Request, token: str = Depends(oauth2_scheme), db: 
     return user
 
 @oauth_router.post('/token', response_model=Token, include_in_schema=False  )
-def login_access_token(*, response: Response, form_data: OAuth2PasswordRequestForm=Depends(),
+def login_access_token(*, request: Request, response: Response, form_data: OAuth2PasswordRequestForm=Depends(),
                 db: Session = Depends(get_session), background_tasks: BackgroundTasks ):
     query = select(User).where(User.username == form_data.username)
     user = db.exec(query).first()
@@ -105,10 +109,12 @@ def login_access_token(*, response: Response, form_data: OAuth2PasswordRequestFo
         return response
 
     else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Username or password incorrect"
-        )
+        # raise HTTPException(
+        #     status_code=status.HTTP_401_UNAUTHORIZED,
+        #     detail="Username or password incorrect"
+        # )
+        context = {'request': request, 'message': "Username or password are incorrect!"}
+        return templates.TemplateResponse("login.html", context)
 
 @oauth_router.get("/login", include_in_schema=False)
 def login(request: Request):

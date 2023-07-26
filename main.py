@@ -7,10 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi import Depends
 from oauth import get_current_user
 # from fastapi.middleware.cors import CORSMiddleware
-
-engine = create_engine(
-    "sqlite:///app.db", connect_args={"check_same_thread": False} # Log generated SQL
-)
+from db import engine
 
 app = FastAPI()
 app.include_router(router)
