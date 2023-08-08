@@ -152,6 +152,9 @@ def delete_car(request: Request, id: int=Form(None), db: Session=Depends(get_ses
             shutil.rmtree(dir_to_delete) # onerror={'error'}
         except OSError as e:
             logging.info(f"Error deleting the directory: {dir_to_delete}, {e.strerror}")
+        except Exception as e:
+            logging.error(f"Something went wrong, error: {e}, {e.strerror}")
+            return HTTPException(status_code=400, detail=f"Something went wrong, error {e}")
         if request.method == "POST":
             redirect_url = URL(request.url_for('get_user_cars'))
             response = RedirectResponse(redirect_url, status_code=303)
