@@ -12,7 +12,7 @@ from models import User
 
 
 engine = create_engine(
-    "sqlite:///app.db",
+    "sqlite:///postgres_data/app.db",
     connect_args={"check_same_thread": False},  # Needed for SQLite
     echo=True # Log generated SQL
 )

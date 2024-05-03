@@ -23,7 +23,6 @@ router = APIRouter(prefix="/api")
 
 
 
-
 @router.get("/", include_in_schema=False)
 @router.get("/cars", include_in_schema=False)
 def get_user_cars(request: Request, db: Session = Depends(get_session), user: User = Depends(get_current_user)):
